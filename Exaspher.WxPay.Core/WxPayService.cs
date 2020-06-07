@@ -75,8 +75,8 @@ qkIlerjtpwO6pXtg0tUgqt74ySI=";
 				BusinessLicenseInfo = new ApplyMentBusinessLicenseInfo()
 				{
 					LicenseCopy = "tV7icXfN8VX58X0D187-NV08cFGRlx6LPg261cpQDI-asaq-0MXen3N7OVE5lDbStaS8nBBbBlv6hL3er8bDK-djRp4PtWGArfr9Numqxsk",
-					LicenseNumber = "1232321321321",
-					MerchantName = "腾讯科技有限公司",
+					LicenseNumber = "91440300MA5EYUKH2K",
+					MerchantName = "张三餐饮店",
 					LegalPerson = "张三"
 				},
 				IdentityInfo = new ApplyMentIdentityInfo()
@@ -104,7 +104,7 @@ qkIlerjtpwO6pXtg0tUgqt74ySI=";
 					SalesScenesType = new List<string>() { "SALES_SCENES_STORE" },
 					BizStorInfo = new ApplyMentBizStorInfo()
 					{
-						BizStoreName = "大郎烧饼",
+						BizStoreName = "张三餐饮店",
 						BizAddressCode = "440305",
 						BizStoreAddress = "南山区xx大厦x层xxxx室",
 						StoreEntrancePic = new List<string>()
@@ -180,7 +180,9 @@ W5ZvS0R4mIlA5C5cjc7WEtijNh4coYEpaloNBGRnnYi6tkfpgPWKDThorrbnfTtC
 			request.Content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
 
 			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("WECHATPAY2-SHA256-RSA2048", await BuildAuthAsync(request, mchid, serial_no, nonce_str));
-			client.DefaultRequestHeaders.Add("Wechatpay-Serial", _configuration.GetValue<string>("WxPay:SerialNo"));
+
+			// var serialNo = _configuration.GetValue<string>("WxPay:SerialNo");
+			client.DefaultRequestHeaders.Add("Wechatpay-Serial", "7796A62C45F1F83B0B8F5ED5989DE9125D74BD34");
 			client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36");
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 			// client.DefaultRequestHeaders.Add("Content-Type", "application/json");
