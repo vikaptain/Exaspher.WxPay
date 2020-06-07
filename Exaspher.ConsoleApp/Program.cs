@@ -1,0 +1,39 @@
+﻿using System.Security.Cryptography;
+
+namespace Exaspher.ConsoleApp
+{
+	internal class Program
+	{
+		private static void Main(string[] args)
+		{
+			string publicKeyStr = @"
+MIID9jCCAt6gAwIBAgIUTx7IYrSYLGnDvK40/E02coyFez4wDQYJKoZIhvcNAQEL
+BQAwXjELMAkGA1UEBhMCQ04xEzARBgNVBAoTClRlbnBheS5jb20xHTAbBgNVBAsT
+FFRlbnBheS5jb20gQ0EgQ2VudGVyMRswGQYDVQQDExJUZW5wYXkuY29tIFJvb3Qg
+Q0EwHhcNMjAwNjAxMDIxNTM4WhcNMjUwNTMxMDIxNTM4WjCBhzETMBEGA1UEAwwK
+MTU5NjQ2MjYwMTEbMBkGA1UECgwS5b6u5L+h5ZWG5oi357O757ufMTMwMQYDVQQL
+DCrph43luobmsYflmInml7bku6PnlLXlrZDllYbliqHmnInpmZDlhazlj7gxCzAJ
+BgNVBAYMAkNOMREwDwYDVQQHDAhTaGVuWmhlbjCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBAK56vu6O9vBB+MOg8MLmT3qg16ICErXoHgRklfWK/bFql9p5
+WVMcTddRCZbewVxmTswLfNAreqPlJWtWQPjV2D8p0qhbHnz07vkybeqEqX2epHaO
+2HTuu4ASTd1spE1tLUm+telrWssOz/LuQ3N2h6EXK16SlNsLBW+GBEVgbrkQIz8k
+TqAe/ZOk5ywO2/PYP4x15LiXddGCJB+SG1F1E/n2bBr7AjsE1YimEcxtBD0puX9+
+TGUiyMzlFl0snaKXoNhx4F6JMtfYilaiK1zmwNmmfA1h9lVAS78lQAtflTgEr0gn
+AlG8ruUo9JNdikLhH5fGvUKcIV3Qgt/2XJQwKfMCAwEAAaOBgTB/MAkGA1UdEwQC
+MAAwCwYDVR0PBAQDAgTwMGUGA1UdHwReMFwwWqBYoFaGVGh0dHA6Ly9ldmNhLml0
+cnVzLmNvbS5jbi9wdWJsaWMvaXRydXNjcmw/Q0E9MUJENDIyMEU1MERCQzA0QjA2
+QUQzOTc1NDk4NDZDMDFDM0U4RUJEMjANBgkqhkiG9w0BAQsFAAOCAQEABy+maotA
+Ye2//1fwzrFirwAaduzVY+HINd8gzhj59YpYMaB2QQ1pm6gLutNpRsjqUYvYyAEi
+Cbd0J1MI5XhlE+hJn9zzqvivXgW9ySHPcE4dbUzsj0rAtCn3/8KrDI3oK25tMHll
+gmuN720WQu+Q3FZ+wif4exYUwuHO0+yrqqg3KrP4ReU/O5c3VjxFu/YKLyTCajXc
+dgOnXMjvxbTmum3PZdRH2Biu9LXLcy/1PDPpSqTEJ7Clh6gs0ARRzmXVP38tTMfw
+W5ZvS0R4mIlA5C5cjc7WEtijNh4coYEpaloNBGRnnYi6tkfpgPWKDThorrbnfTtC
+7IX2aTdgjG+b8g==
+";
+
+			var rsa = RSA.Create();
+
+			rsa.ImportRSAPublicKey(System.Text.Encoding.Default.GetBytes(publicKeyStr), out var bytesRead);
+		}
+	}
+}
