@@ -244,35 +244,19 @@ namespace Exaspher.WxPay.Core.Util
 
 	public class EncryptUtil
 	{
-		//public static string RSAEncrypt(string text, byte[] publicKey)
-		//{
-		//	System.Security.Cryptography.X509Certificates.X509Certificate2 cert = new X509Certificate2(@"Cert/server_pub.cer");
-
-		//	var rsa = RSA.Create();
-
-		//	rsa.ImportRSAPublicKey(publicKey, out var bytesRead);
-
-		//	var encrypt = rsa.Encrypt(System.Text.Encoding.Default.GetBytes(text), RSAEncryptionPadding.OaepSHA256);
-
-		//	return Convert.ToBase64String(encrypt);
-		//}
-
-		public static string RSAEncrypt(string text, byte[] publicKey = default(byte[]))
+		public static string RSAEncrypt(string text)
 		{
-			var cert = new X509Certificate2(@"E:\DEV\Github\Exaspher.WxPay\Exaspher.WxPay.WebCore\cert\apiclient_cert.pem");
+			var cert = new X509Certificate2(@"E:\DEV\Github\Exaspher.WxPay\Exaspher.WxPay.WebCore\cert\public_key.pem");
 			using (RSA csp = (RSA)cert.PublicKey.Key)
 			{
-				byte[] bytesEncrypted = csp.Encrypt(Encoding.UTF8.GetBytes(text), RSAEncryptionPadding.OaepSHA1);
+				byte[] bytesEncrypted = csp.Encrypt(Encoding.UTF8.GetBytes(text), RSAEncryptionPadding.OaepSHA256);
 				return Convert.ToBase64String(bytesEncrypted);
 			}
 
-			//var rsa = RSA.Create();
-
-			//rsa.ImportRSAPublicKey(publicKey, out var bytesRead);
-
-			//var encrypt = rsa.Encrypt(System.Text.Encoding.Default.GetBytes(text), RSAEncryptionPadding.OaepSHA256);
-
-			//return Convert.ToBase64String(encrypt);
+			//RSA rsa = RSA.Create();
+			//rsa.ImportRSAPublicKey(publicKey, out _);
+			//var bytesEncrypted = rsa.Encrypt(Encoding.UTF8.GetBytes(text), RSAEncryptionPadding.OaepSHA1);
+			//return Convert.ToBase64String(bytesEncrypted);
 		}
 
 		public static byte[] RSAEncrypt(byte[] DataToEncrypt, RSAParameters RSAKeyInfo, bool DoOAEPPadding)

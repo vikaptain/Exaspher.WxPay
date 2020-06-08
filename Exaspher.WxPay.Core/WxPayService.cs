@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using RSAExtensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -20,45 +22,24 @@ namespace Exaspher.WxPay.Core
 		private readonly IConfiguration _configuration;
 		private readonly IHostEnvironment _hostEnvironment;
 
-		private string privateKey = @"MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQCuer7ujvbwQfjD
-oPDC5k96oNeiAhK16B4EZJX1iv2xapfaeVlTHE3XUQmW3sFcZk7MC3zQK3qj5SVr
-VkD41dg/KdKoWx589O75Mm3qhKl9nqR2jth07ruAEk3dbKRNbS1JvrXpa1rLDs/y
-7kNzdoehFytekpTbCwVvhgRFYG65ECM/JE6gHv2TpOcsDtvz2D+MdeS4l3XRgiQf
-khtRdRP59mwa+wI7BNWIphHMbQQ9Kbl/fkxlIsjM5RZdLJ2il6DYceBeiTLX2IpW
-oitc5sDZpnwNYfZVQEu/JUALX5U4BK9IJwJRvK7lKPSTXYpC4R+Xxr1CnCFd0ILf
-9lyUMCnzAgMBAAECggEBAIpjpz82O9zSpsobw/sCi7W7D21bcZXAttZLJbos9Q2c
-ezd5GoVWJNOMXivBIOL17rfewK+oXMzUOnrJXh1AGBX5STHpm+QGrekPu6jQclLF
-2rKCmGMe2684VXQz8JnM56ffURAD6261n/CSVQOm1urJosePQev+8N/FD2wrkYbM
-Wo3dIXBdJIT1U9n9W76nUnAUVToCGhXLf7G3yUDL02Dy1e49l0VdtrJlrDJwhngA
-HCZQpS56737NnFtT9PC6r+hsTzTn1xeewzxm7Q2LZmIfj0FfVacGCwWsG3WGisEo
-KojYLx9702hixCtxFiNZ0nxRBkNak6ao8/tzhB0olWECgYEA5ZyZuWTiQlARXDrZ
-+7iE61B8RDkqC0UlL2a0QSIa8B+xM48VLBMOhR65W9VYIQkeN2GqDZEuDdtOpR95
-Tj+c6eAtgM17nToinFiTHjbjLtHD9frbNeWSVfsJYcE0+t4aOGyUUDV9mfbmF99n
-5iqnZ7lDBJvsm3h7jdc01qrmEKMCgYEAwogZ6kCEzX7QQe8tLLmQhSp2n6xy8kYC
-JMw2zjg2KbghTepGizgqQutHliyuLf6r1Pr7Tp3SN4KH+2xqkD0sRASIrF526avs
-sKg99WS8JTLEGxbw6snV+DDECZTIgMDSUbMP+FDrEFwAWBCvEI2TW1H7DZkzvbzi
-xAyk5t+1BnECgYEAxeh897dk7hNlY0G2sakRqGHvOj6rZptqubiklZ936JDog7BI
-Z3zlfwhEbEsvcwoQ6Vtc3+TK9VaaKuk9/ZwG++8mSWbTrWl2e5w88kYM+0YCyfo3
-B/WgdEu0gnWt3K2jnA66p4fzgsm0+c6uF02cjWK5yTc8caUfmdpsyLr1IlECgYEA
-kKceBif12Mzs1aqhv/k4sx0xWmikjO1sGKrWMiBwfjNSaJrF3C5mlp5X/B67Yq5W
-XihHiV0n/WkN7vLehuVGLknky6/u4rGabn6cnAZNNaf7VV2Ixj5R4p14mNtPARbh
-DimFvZOGSALxqoq1cyyjn6tlcOY0KGn1ge0ZDijZdrECgYEAvM1u51zibVU8lp5T
-76RkEVWoVNThkW3yWy2wyFU3OT25QC583sCzLLQ2EAbGX4MEf1n6rHCduUuduDs8
-uJI60i7Fxfr6wEefozHLvO/JDBhdwzzYDemTQKxR708ZO/IV1zhFIdWXy3HtKnHK
-qkIlerjtpwO6pXtg0tUgqt74ySI=";
+		private readonly string _mchId;
+		private readonly string _serialNo;
 
 		public WxPayService(IConfiguration configuration, IHostEnvironment hostEnvironment)
 		{
 			_configuration = configuration;
 			_hostEnvironment = hostEnvironment;
+			_mchId = _configuration.GetValue<string>("WxPay:MchId");
+			_serialNo = _configuration.GetValue<string>("WxPay:SerialNo");
 		}
 
 		public async Task<object> ApplyMent()
 		{
-			HttpClient client = new HttpClient();
+			var nonce = GenerateNonce();
+
+			#region 传入数据
 
 			var applyment = new ApplyMentDto();
-
 			applyment.BusinessCode = "X00000000001";
 			applyment.ContactInfo = new ApplyMentContactInfoDto()
 			{
@@ -68,7 +49,6 @@ qkIlerjtpwO6pXtg0tUgqt74ySI=";
 				MobilePhone = "13333333333",
 				ContactEmail = "11@gmail.com",
 			};
-
 			applyment.SubjectInfo = new ApplyMentSubjectInfo()
 			{
 				SubjectType = "SUBJECT_TYPE_INDIVIDUAL",
@@ -94,7 +74,6 @@ qkIlerjtpwO6pXtg0tUgqt74ySI=";
 					Owner = true
 				},
 			};
-
 			applyment.BusinessInfo = new ApplyMentBusinessInfo()
 			{
 				MerchantShortName = "张三餐饮店",
@@ -118,7 +97,6 @@ qkIlerjtpwO6pXtg0tUgqt74ySI=";
 					}
 				}
 			};
-
 			applyment.SettlementInfo = new ApplyMentSettlementInfo()
 			{
 				SettlementId = "719",
@@ -129,66 +107,20 @@ qkIlerjtpwO6pXtg0tUgqt74ySI=";
 				},
 				ActivitiesAdditions = new List<string>(),
 			};
+			applyment.Encrypt(GetPublicCertificate().PublicKey.Key as RSA);
 
-			string publicKeyStr = @"
-MIID9jCCAt6gAwIBAgIUTx7IYrSYLGnDvK40/E02coyFez4wDQYJKoZIhvcNAQEL
-BQAwXjELMAkGA1UEBhMCQ04xEzARBgNVBAoTClRlbnBheS5jb20xHTAbBgNVBAsT
-FFRlbnBheS5jb20gQ0EgQ2VudGVyMRswGQYDVQQDExJUZW5wYXkuY29tIFJvb3Qg
-Q0EwHhcNMjAwNjAxMDIxNTM4WhcNMjUwNTMxMDIxNTM4WjCBhzETMBEGA1UEAwwK
-MTU5NjQ2MjYwMTEbMBkGA1UECgwS5b6u5L+h5ZWG5oi357O757ufMTMwMQYDVQQL
-DCrph43luobmsYflmInml7bku6PnlLXlrZDllYbliqHmnInpmZDlhazlj7gxCzAJ
-BgNVBAYMAkNOMREwDwYDVQQHDAhTaGVuWmhlbjCCASIwDQYJKoZIhvcNAQEBBQAD
-ggEPADCCAQoCggEBAK56vu6O9vBB+MOg8MLmT3qg16ICErXoHgRklfWK/bFql9p5
-WVMcTddRCZbewVxmTswLfNAreqPlJWtWQPjV2D8p0qhbHnz07vkybeqEqX2epHaO
-2HTuu4ASTd1spE1tLUm+telrWssOz/LuQ3N2h6EXK16SlNsLBW+GBEVgbrkQIz8k
-TqAe/ZOk5ywO2/PYP4x15LiXddGCJB+SG1F1E/n2bBr7AjsE1YimEcxtBD0puX9+
-TGUiyMzlFl0snaKXoNhx4F6JMtfYilaiK1zmwNmmfA1h9lVAS78lQAtflTgEr0gn
-AlG8ruUo9JNdikLhH5fGvUKcIV3Qgt/2XJQwKfMCAwEAAaOBgTB/MAkGA1UdEwQC
-MAAwCwYDVR0PBAQDAgTwMGUGA1UdHwReMFwwWqBYoFaGVGh0dHA6Ly9ldmNhLml0
-cnVzLmNvbS5jbi9wdWJsaWMvaXRydXNjcmw/Q0E9MUJENDIyMEU1MERCQzA0QjA2
-QUQzOTc1NDk4NDZDMDFDM0U4RUJEMjANBgkqhkiG9w0BAQsFAAOCAQEABy+maotA
-Ye2//1fwzrFirwAaduzVY+HINd8gzhj59YpYMaB2QQ1pm6gLutNpRsjqUYvYyAEi
-Cbd0J1MI5XhlE+hJn9zzqvivXgW9ySHPcE4dbUzsj0rAtCn3/8KrDI3oK25tMHll
-gmuN720WQu+Q3FZ+wif4exYUwuHO0+yrqqg3KrP4ReU/O5c3VjxFu/YKLyTCajXc
-dgOnXMjvxbTmum3PZdRH2Biu9LXLcy/1PDPpSqTEJ7Clh6gs0ARRzmXVP38tTMfw
-W5ZvS0R4mIlA5C5cjc7WEtijNh4coYEpaloNBGRnnYi6tkfpgPWKDThorrbnfTtC
-7IX2aTdgjG+b8g==
-";
+			#endregion 传入数据
 
-			applyment.Encrypt(Encoding.UTF8.GetBytes(publicKeyStr));
+			var jsonContent = JsonSerializer.Serialize(applyment);
 
-			// var jsonStr = JsonConvert.SerializeObject(applyment);
+			var httpHandler = new HttpHandler(_mchId, _serialNo, GetPublicCertificate().SerialNumber, GetPrivateCertificate(), GetMerchantCertificate());
+			var client = new HttpClient(httpHandler);
 
-			var jsonStr = JsonSerializer.Serialize(applyment);
-
-			var mchid = _configuration.GetValue<string>("WxPay:MchId");
-			var serial_no = _configuration.GetValue<string>("WxPay:SerialNo");
-
-			var nonce_str = Guid.NewGuid().ToString();
-
-			TimeSpan ts = DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0);
-			var timestamp = Convert.ToInt64(ts.TotalSeconds).ToString();
-
-			var path = _hostEnvironment.ContentRootPath + _configuration.GetValue<string>("WxPay:CertPath");
-
-			//var signature = SignUtil.GetSign("POST", "/v3/applyment4sub/applyment", nonce_str, jsonStr, path
-			//	, _configuration.GetValue<string>("WxPay:CertPwd"));
-
-			//var authorization =
-			//	$"mchid=\"{mchid}\",serial_no=\"{serial_no}\",nonce_str=\"{nonce_str}\",timestamp=\"{timestamp}\",signature=\"{signature}\"";
-			HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/applyment4sub/applyment/");
-			request.Content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
-
-			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("WECHATPAY2-SHA256-RSA2048", await BuildAuthAsync(request, mchid, serial_no, nonce_str));
-
-			// var serialNo = _configuration.GetValue<string>("WxPay:SerialNo");
-			client.DefaultRequestHeaders.Add("Wechatpay-Serial", "7796A62C45F1F83B0B8F5ED5989DE9125D74BD34");
-			client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36");
-			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-			// client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-			// client.DefaultRequestHeaders.
-
-			// var response = await client.PostAsync(new Uri("https://api.mch.weixin.qq.com/v3/applyment4sub/applyment/"), byteContent);
+			var request = new HttpRequestMessage(HttpMethod.Post,
+				"https://api.mch.weixin.qq.com/v3/applyment4sub/applyment/")
+			{
+				Content = new StringContent(jsonContent, Encoding.UTF8, "application/json")
+			};
 
 			var response = await client.SendAsync(request);
 			var result = await response.Content.ReadAsStringAsync();
@@ -261,22 +193,17 @@ W5ZvS0R4mIlA5C5cjc7WEtijNh4coYEpaloNBGRnnYi6tkfpgPWKDThorrbnfTtC
 				sha256 = hashValueStr
 			};
 
-			var jsonStr = JsonSerializer.Serialize(meta);
-
-			var mchid = _configuration.GetValue<string>("WxPay:MchId");
-			var serial_no = _configuration.GetValue<string>("WxPay:SerialNo");
+			var jsonContent = JsonSerializer.Serialize(meta);
 
 			var nonce_str = Guid.NewGuid().ToString();
 
-			var path = _hostEnvironment.ContentRootPath + _configuration.GetValue<string>("WxPay:CertPath");
-
-			var httpHandler = new HttpHandler(mchid, serial_no, privateKey, jsonStr);
+			var httpHandler = new HttpHandler(_mchId, _serialNo, GetPublicCertificate().SerialNumber, GetPrivateCertificate(), GetMerchantCertificate(), jsonContent);
 			var client = new HttpClient(httpHandler);
 
 			var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/merchant/media/upload");
 
 			var requestContent = new MultipartFormDataContent("--" + boundary);
-			requestContent.Add(new StringContent(jsonStr, Encoding.UTF8, "application/json"), "\"meta\"");
+			requestContent.Add(new StringContent(jsonContent, Encoding.UTF8, "application/json"), "\"meta\"");
 
 			var byteArrayContent = new ByteArrayContent(buffer);
 			byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpg");
@@ -311,13 +238,14 @@ W5ZvS0R4mIlA5C5cjc7WEtijNh4coYEpaloNBGRnnYi6tkfpgPWKDThorrbnfTtC
 				filename = "1.png"
 			};
 
-			var json = JsonConvert.SerializeObject(meta);
-			var httpHandler = new HttpHandler(mchid, serialNo, privateKey, json);
+			var jsonContent = JsonConvert.SerializeObject(meta);
+			// var httpHandler = new HttpHandler(mchid, serialNo, privateKey, json);
+			var httpHandler = new HttpHandler(mchid, serialNo, GetPublicCertificate().SerialNumber, GetPrivateCertificate(), GetMerchantCertificate(), jsonContent);
 			HttpClient client = new HttpClient(httpHandler);
 			using (var requestContent = new MultipartFormDataContent(boundary))
 			{
 				requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data"); //这里必须添加
-				requestContent.Add(new StringContent(json, Encoding.UTF8, "application/json"), "\"meta\"");
+				requestContent.Add(new StringContent(jsonContent, Encoding.UTF8, "application/json"), "\"meta\"");
 				// 这里主要必须要双引号
 				//var fileInfo = new FileInfo(filePath);
 				//using (var fileStream = fileInfo.OpenRead())
@@ -361,24 +289,101 @@ W5ZvS0R4mIlA5C5cjc7WEtijNh4coYEpaloNBGRnnYi6tkfpgPWKDThorrbnfTtC
 			// string nonce = Path.GetRandomFileName();
 
 			string message = $"{method}\n{uri}\n{timestamp}\n{nonce}\n{body}\n";
-			string signature = Sign(message);
+			string signature = string.Empty; // Sign(message);
 			return $"mchid=\"{mchid}\",nonce_str=\"{nonce}\",timestamp=\"{timestamp}\",serial_no=\"{serialNo}\",signature=\"{signature}\"";
 		}
 
-		protected string Sign(string message)
+		//protected string Sign(string message)
+		//{
+		//	// NOTE： 私钥不包括私钥文件起始的-----BEGIN PRIVATE KEY-----
+		//	//        亦不包括结尾的-----END PRIVATE KEY-----
+
+		//	byte[] keyData = Convert.FromBase64String(privateKey);
+		//	using (CngKey cngKey = CngKey.Import(keyData, CngKeyBlobFormat.Pkcs8PrivateBlob))
+		//	using (RSACng rsa = new RSACng(cngKey))
+		//	{
+		//		byte[] data = System.Text.Encoding.UTF8.GetBytes(message);
+		//		return Convert.ToBase64String(rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+		//	}
+
+		//	return string.Empty;
+		//}
+
+		public X509Certificate2 GetPublicCertificate()
 		{
-			// NOTE： 私钥不包括私钥文件起始的-----BEGIN PRIVATE KEY-----
-			//        亦不包括结尾的-----END PRIVATE KEY-----
+			var path = _hostEnvironment.ContentRootPath + _configuration.GetValue<string>("WxPay:PublicKey");
+			var cert = new X509Certificate2(path, string.Empty,
+				X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.MachineKeySet);
+			// cert.PublicKey.Key
+			return cert;
 
-			byte[] keyData = Convert.FromBase64String(privateKey);
-			using (CngKey cngKey = CngKey.Import(keyData, CngKeyBlobFormat.Pkcs8PrivateBlob))
-			using (RSACng rsa = new RSACng(cngKey))
-			{
-				byte[] data = System.Text.Encoding.UTF8.GetBytes(message);
-				return Convert.ToBase64String(rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
-			}
+			//var path = _hostEnvironment.ContentRootPath + _configuration.GetValue<string>("WxPay:PublicKey");
+			//var pemContents = System.IO.File.ReadAllText(path);
+			//const string RsaPublicKeyHeader = "-----BEGIN CERTIFICATE-----";
+			//const string RsaPublicKeyFooter = "-----END CERTIFICATE-----";
 
-			return string.Empty;
+			//if (!pemContents.StartsWith(RsaPublicKeyHeader))
+			//{
+			//	throw new InvalidOperationException("公钥加载失败");
+			//}
+			//var endIdx = pemContents.IndexOf(
+			//	RsaPublicKeyFooter,
+			//	RsaPublicKeyHeader.Length,
+			//	StringComparison.Ordinal);
+
+			//var base64 = pemContents.Substring(
+			//	RsaPublicKeyHeader.Length,
+			//	endIdx - RsaPublicKeyHeader.Length);
+
+			//var der = Convert.FromBase64String(base64);
+			//var rsa = RSA.Create();
+			//rsa.ImportRSAPrivateKey(der, out _);
+			//return rsa;
+		}
+
+		public RSA GetPrivateCertificate()
+		{
+			var path = _hostEnvironment.ContentRootPath + _configuration.GetValue<string>("WxPay:PrivateKey");
+			var pemContents = System.IO.File.ReadAllText(path);
+			//const string RsaPrivateKeyHeader = "-----BEGIN PRIVATE KEY-----";
+			//const string RsaPrivateKeyFooter = "-----END PRIVATE KEY-----";
+
+			//if (!pemContents.StartsWith(RsaPrivateKeyHeader))
+			//{
+			//	throw new InvalidOperationException("私钥加载失败");
+			//}
+			//var endIdx = pemContents.IndexOf(
+			//	RsaPrivateKeyFooter,
+			//	RsaPrivateKeyHeader.Length,
+			//	StringComparison.Ordinal);
+
+			//var base64 = pemContents.Substring(
+			//	RsaPrivateKeyHeader.Length,
+			//	endIdx - RsaPrivateKeyHeader.Length);
+
+			//var der = Convert.FromBase64String(base64);
+			//var rsa = RSA.Create();
+			//rsa.ImportRSAPrivateKey(der, out _);
+			//return rsa;
+
+			var rsa = RSA.Create();
+
+			rsa.ImportPrivateKey(RSAKeyType.Pkcs8, pemContents, true);
+			return rsa;
+		}
+
+		private string GenerateNonce()
+		{
+			return Guid.NewGuid().ToString();
+		}
+
+		public X509Certificate2 GetMerchantCertificate()
+		{
+			var path = _hostEnvironment.ContentRootPath + _configuration.GetValue<string>("WxPay:MerchantCertificate");
+			var cert = new X509Certificate2(path, _configuration.GetValue<string>("WxPay:PrivateKeyPassword"),
+				X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.MachineKeySet);
+			var rsa = RSA.Create();
+			return cert;
 		}
 	}
 }
