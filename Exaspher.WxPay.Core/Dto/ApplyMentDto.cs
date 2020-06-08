@@ -1,6 +1,7 @@
-﻿using Exaspher.WxPay.Core.Util;
+﻿using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace Exaspher.WxPay.Core.Dto
@@ -92,25 +93,27 @@ namespace Exaspher.WxPay.Core.Dto
 		{
 			if (!string.IsNullOrWhiteSpace(ContactName))
 			{
-				this.ContactName = EncryptUtil.RSAEncrypt(this.ContactName);
+				this.ContactName = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(ContactName), RSAEncryptionPadding.OaepSHA1));
 				//this.ContactName = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(ContactName), RSAEncryptionPadding.OaepSHA256));
 			}
 
 			if (!string.IsNullOrWhiteSpace(ContactIdNumber))
 			{
-				this.ContactIdNumber = EncryptUtil.RSAEncrypt(this.ContactIdNumber);
+				this.ContactIdNumber = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(ContactIdNumber),
+					RSAEncryptionPadding.OaepSHA1));
 				// this.ContactIdNumber = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(ContactIdNumber), RSAEncryptionPadding.OaepSHA256));
 			}
 
 			if (!string.IsNullOrWhiteSpace(MobilePhone))
 			{
-				this.MobilePhone = EncryptUtil.RSAEncrypt(this.MobilePhone);
-				// this.MobilePhone = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(MobilePhone), RSAEncryptionPadding.OaepSHA256));
+				this.MobilePhone = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(MobilePhone),
+					RSAEncryptionPadding.OaepSHA1));
 			}
 
 			if (!string.IsNullOrWhiteSpace(ContactEmail))
 			{
-				this.ContactEmail = EncryptUtil.RSAEncrypt(this.ContactEmail);
+				this.ContactEmail = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(ContactEmail),
+					RSAEncryptionPadding.OaepSHA1));
 				// this.ContactEmail = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(ContactEmail), RSAEncryptionPadding.OaepSHA256));
 			}
 		}
@@ -335,14 +338,14 @@ namespace Exaspher.WxPay.Core.Dto
 		{
 			if (!string.IsNullOrWhiteSpace(IdCardName))
 			{
-				this.IdCardName = EncryptUtil.RSAEncrypt(this.IdCardName);
-				//this.IdCardName = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(IdCardName), RSAEncryptionPadding.OaepSHA256));
+				this.IdCardName = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(IdCardName),
+					RSAEncryptionPadding.OaepSHA1));
 			}
 
 			if (!string.IsNullOrWhiteSpace(IdCardNumber))
 			{
-				this.IdCardNumber = EncryptUtil.RSAEncrypt(this.IdCardNumber);
-				//this.IdCardNumber = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(IdCardNumber), RSAEncryptionPadding.OaepSHA256));
+				this.IdCardNumber = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(IdCardNumber),
+					RSAEncryptionPadding.OaepSHA1));
 			}
 		}
 	}
@@ -632,14 +635,14 @@ namespace Exaspher.WxPay.Core.Dto
 		{
 			if (!string.IsNullOrWhiteSpace(AccountName))
 			{
-				this.AccountName = EncryptUtil.RSAEncrypt(this.AccountName);
-				//this.AccountName = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(AccountName), RSAEncryptionPadding.OaepSHA256));
+				this.AccountName = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(AccountName),
+					RSAEncryptionPadding.OaepSHA1));
 			}
 
 			if (!string.IsNullOrWhiteSpace(AccountNumber))
 			{
-				this.AccountNumber = EncryptUtil.RSAEncrypt(this.AccountNumber);
-				//this.AccountNumber = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(AccountNumber), RSAEncryptionPadding.OaepSHA256));
+				this.AccountNumber = Convert.ToBase64String(rsa.Encrypt(Encoding.UTF8.GetBytes(AccountNumber),
+					RSAEncryptionPadding.OaepSHA1));
 			}
 		}
 	}

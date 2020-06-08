@@ -126,11 +126,9 @@ namespace Exaspher.WxPay.Core
 			var result = await response.Content.ReadAsStringAsync();
 			if (response.StatusCode != HttpStatusCode.OK)
 			{
-				//logger.Error($"GetAsync End, url:{url}, HttpStatusCode:{response.StatusCode}, result:{result}");
-				// return new T();
 			}
 
-			return null;
+			return string.Empty;
 		}
 
 		public async Task GetCertificates()
@@ -145,14 +143,6 @@ namespace Exaspher.WxPay.Core
 			var timestamp = Convert.ToInt64(ts.TotalSeconds).ToString();
 
 			HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/certificates");
-
-			//var signature = SignUtil.GetSign("POST", "/v3/applyment4sub/applyment", nonce_str, "",
-			//	_configuration.GetValue<string>("WxPay:CertPath"), _configuration.GetValue<string>("WxPay:CertPwd"));
-
-			/// var signature=
-
-			//var authorization =
-			//	$"mchid={mchid},serial_no={serial_no},nonce_str={nonce_str},timestamp={timestamp},signature={signature}";
 
 			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("WECHATPAY2-SHA256-RSA2048", await BuildAuthAsync(request, mchid, serial_no, nonce_str));
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
