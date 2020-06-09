@@ -154,106 +154,48 @@ namespace Exaspher.WxPay.Core
 			}
 		}
 
-		public async Task<string> Upload1(string fileName, byte[] buffer)
-		{
-			var hashValueStr = string.Empty;
-			using (var mySHA256 = SHA256.Create())
-			{
-				try
-				{
-					var sha = new SHA256Managed();
-					var checksum = sha.ComputeHash(buffer);
-					hashValueStr = BitConverter.ToString(checksum).Replace("-", String.Empty);
-				}
-				catch (IOException e)
-				{
-					Console.WriteLine($"I/O Exception: {e.Message}");
-				}
-				catch (UnauthorizedAccessException e)
-				{
-					Console.WriteLine($"Access Exception: {e.Message}");
-				}
-			}
-
-			var boundary = $"{DateTime.Now.Ticks:x}";
-
-			var meta = new
-			{
-				filename = fileName,
-				sha256 = hashValueStr
-			};
-
-			var jsonContent = JsonSerializer.Serialize(meta);
-
-			var nonce_str = Guid.NewGuid().ToString();
-
-			var httpHandler = new HttpHandler(_mchId, _serialNo, GetPublicCertificate().SerialNumber, GetPrivateCertificate(), GetMerchantCertificate(), jsonContent);
-			var client = new HttpClient(httpHandler);
-
-			var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/merchant/media/upload");
-
-			var requestContent = new MultipartFormDataContent("--" + boundary);
-			requestContent.Add(new StringContent(jsonContent, Encoding.UTF8, "application/json"), "\"meta\"");
-
-			var byteArrayContent = new ByteArrayContent(buffer);
-			byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpg");
-			requestContent.Add(byteArrayContent, "\"file\"", "\"" + meta.filename + "\"");
-
-			//client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("WECHATPAY2-SHA256-RSA2048", await BuildAuthAsync(request, mchid, serial_no, nonce_str, jsonStr));
-			//client.DefaultRequestHeaders.Add("Wechatpay-Serial", _configuration.GetValue<string>("WxPay:SerialNo"));
-			//client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36");
-			//client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-			var response = await client.PostAsync("https://api.mch.weixin.qq.com/v3/merchant/media/upload", requestContent);  // await client.SendAsync(request);
-			var result = await response.Content.ReadAsStringAsync();
-			if (response.StatusCode != HttpStatusCode.OK)
-			{
-				//logger.Error($"GetAsync End, url:{url}, HttpStatusCode:{response.StatusCode}, result:{result}");
-				// return new T();
-			}
-
-			return null;
-		}
-
 		public async Task<string> Upload(string fileName, byte[] buffer)
 		{
-			string mchid = "1596462601";
-			string serialNo = "4F1EC862B4982C69C3BCAE34FC4D36728C857B3E";
-			string boundary = $"--{DateTime.Now.Ticks:x}";
+			var boundary = $"--{DateTime.Now.Ticks:x}";
 
-			var sha256 = SHAFile.SHA256File(_hostEnvironment.ContentRootPath + "/images/1.png");
+			#region 文件SHA256
+
+			HashAlgorithm algorithm = SHA256.Create();
+			var hashBytes = algorithm.ComputeHash(buffer);
+
+			var sb = new StringBuilder();
+			foreach (var b in hashBytes)
+			{
+				sb.Append(Convert.ToString(b, 16).PadLeft(2, '0'));
+			}
+
+			var sha256 = sb.ToString().ToUpper();
+
+			#endregion
+
 			var meta = new
 			{
 				sha256 = sha256,
-				filename = "1.png"
+				filename = fileName
 			};
 
 			var jsonContent = JsonConvert.SerializeObject(meta);
-			// var httpHandler = new HttpHandler(mchid, serialNo, privateKey, json);
-			var httpHandler = new HttpHandler(mchid, serialNo, GetPublicCertificate().SerialNumber, GetPrivateCertificate(), GetMerchantCertificate(), jsonContent);
-			HttpClient client = new HttpClient(httpHandler);
-			using (var requestContent = new MultipartFormDataContent(boundary))
-			{
-				requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data"); //这里必须添加
-				requestContent.Add(new StringContent(jsonContent, Encoding.UTF8, "application/json"), "\"meta\"");
-				// 这里主要必须要双引号
-				//var fileInfo = new FileInfo(filePath);
-				//using (var fileStream = fileInfo.OpenRead())
-				//{
-				//var content = new byte[fileStream.Length];
-				//fileStream.Read(content, 0, content.Length);
-				var byteArrayContent = new ByteArrayContent(buffer);
-				byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpg");
-				requestContent.Add(byteArrayContent, "\"file\"", "\"" + meta.filename + "\"");  //这里主要必须要双引号
-				using (var response = await client.PostAsync("https://api.mch.weixin.qq.com/v3/merchant/media/upload", requestContent)) //上传
-				using (var responseContent = response.Content)
-				{
-					string responseBody = await responseContent.ReadAsStringAsync(); //这里就可以拿到图片id了
-																					 // return ResultHelper.QuickReturn(responseBody);
-					return string.Empty;
-				}
-				//}
-			}
+
+			var httpHandler = new HttpHandler(_mchId, _serialNo, GetPublicCertificate().SerialNumber, GetPrivateCertificate(), GetMerchantCertificate(), jsonContent);
+			var client = new HttpClient(httpHandler);
+			using var requestContent = new MultipartFormDataContent(boundary);
+			requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data"); //这里必须添加
+			requestContent.Add(new StringContent(jsonContent, Encoding.UTF8, "application/json"), "\"meta\"");
+			
+			var byteArrayContent = new ByteArrayContent(buffer);
+			byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpg");
+			requestContent.Add(byteArrayContent, "\"file\"", "\"" + meta.filename + "\"");  //这里主要必须要双引号
+			using var response = await client.PostAsync("https://api.mch.weixin.qq.com/v3/merchant/media/upload", requestContent);
+			using var responseContent = response.Content;
+			var responseBody = await responseContent.ReadAsStringAsync(); //这里就可以拿到图片id了
+			// return ResultHelper.QuickReturn(responseBody);
+			return string.Empty;
+			//}
 		}
 
 		protected async Task<string> BuildAuthAsync(HttpRequestMessage request, string mchid, string serialNo, string nonce, string jsonStr = "")

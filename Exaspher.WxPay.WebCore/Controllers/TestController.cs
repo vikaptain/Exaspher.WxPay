@@ -30,8 +30,6 @@ namespace Exaspher.WxPay.WebCore.Controllers
 		[HttpGet]
 		public async Task<string> Upload()
 		{
-			
-			
 			var buffer = System.IO.File.ReadAllBytes(_hostEnvironment.ContentRootPath + "/images/1.png");
 			var result = await _wxPayService.Upload("1.png", buffer);
 			return result;
